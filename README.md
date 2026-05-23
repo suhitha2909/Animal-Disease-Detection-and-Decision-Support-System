@@ -133,3 +133,9 @@ Risk bands:
 - **HIGH**   ≥ 75 % → consult vet immediately
 - **MEDIUM** 45–74 % → monitor and consult if worsening
 - **LOW**    < 45 % → unclear, get a clearer image or direct vet consult
+
+## Team Members
+
+- Suhitha
+- Jaswanth Kesanapalli
+- Lavanya

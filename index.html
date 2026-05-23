@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VetScan — Animal Disease Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+  /* ── Reset & base ──────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:
+    --surface:
+    --border:
+    --text:
+    --muted:
+    --accent:
+    --accent2:
+    --warn:
+    --danger:
+    --radius:    14px;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 36px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(22,26,34,0.85);
+    backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  .logo span { color: var(--text); }
+  .tagline { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+  main { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+  h2 { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; letter-spacing: 0.3px; }
+  /* ── Cards ─────────────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+  /* ── Upload zone ────────────────────────────────────────────────────── */
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+    border-color: var(--accent);
+    background: rgba(62,207,142,.05);
+  }
+  .upload-icon { font-size: 2.4rem; margin-bottom: 10px; }
+  .upload-label { font-size: 0.9rem; color: var(--muted); }
+  .upload-label strong { color: var(--accent); cursor: pointer; }
+    position: absolute; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  /* ── Animal selector ─────────────────────────────────────────────────── */
+  .animal-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+  .animal-btn {
+    flex: 1; min-width: 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .animal-btn .icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+  .animal-btn.selected {
+    border-color: var(--accent);
+    background: rgba(62,207,142,.08);
+    color: var(--text);
+  }
+  /* ── Submit button ───────────────────────────────────────────────────── */
+    width: 100%;
+    background: var(--accent);
+    color:
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: opacity .2s, transform .1s;
+    margin-top: 8px;
+  }
+  /* ── Loader ──────────────────────────────────────────────────────────── */
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* ── Error banner ────────────────────────────────────────────────────── */
+    display: none;
+    background: rgba(239,68,68,.1);
+    border: 1px solid rgba(239,68,68,.3);
+    color:
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+  /* ── Results ─────────────────────────────────────────────────────────── */
+  /* Prediction bars */
+  .pred-item { margin-bottom: 16px; }
+  .pred-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88rem; }
+  .pred-label  { font-weight: 500; text-transform: capitalize; }
+  .pred-pct    { color: var(--muted); }
+  .bar-bg { background: var(--border); border-radius: 99px; height: 7px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width .6s ease; }
+  .bar-fill.mid { background: var(--warn); }
+  .bar-fill.low { background: var(--muted); }
+  /* Gradcam */
+  .gradcam-wrap { display: flex; gap: 14px; flex-wrap: wrap; }
+  .gradcam-wrap img { flex: 1; min-width: 180px; border-radius: 10px; border: 1px solid var(--border); }
+  /* Risk badge */
+  .risk-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .risk-HIGH   { background: rgba(239,68,68,.15);  color:
+  .risk-MEDIUM { background: rgba(245,158,11,.15); color:
+  .risk-LOW    { background: rgba(62,207,142,.15); color: var(--accent); }
+  /* Follow-up questions */
+  .question-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .question-text { font-size: 0.88rem; flex: 1; }
+  .yn-group { display: flex; gap: 8px; }
+  .yn-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 7px;
+    padding: 5px 16px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all .15s;
+  }
+  .yn-btn.yes.active { border-color: var(--accent); color: var(--accent); background: rgba(62,207,142,.08); }
+  .yn-btn.no.active  { border-color: var(--danger);  color: var(--danger);  background: rgba(239,68,68,.08); }
+    background: var(--accent2);
+    color:
+    border: none;
+    border-radius: var(--radius);
+    padding: 13px 28px;
+    font-family: var(--font-head);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: opacity .2s;
+  }
+  /* Refined result */
+  .refined-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-top: 16px;
+  }
+  .refined-conf { font-family: var(--font-head); font-size: 2.2rem; font-weight: 800; }
+  .refined-conf.HIGH   { color:
+  .refined-conf.MEDIUM { color:
+  .refined-conf.LOW    { color: var(--accent); }
+  .advice-text { font-size: 0.9rem; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+  /* ── Misc ────────────────────────────────────────────────────────────── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 0.72rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .detected-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(62,207,142,.08);
+    border: 1px solid rgba(62,207,142,.2);
+    color: var(--accent);
+    border-radius: 99px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Vet<span>Scan</span></div>
+  <div class="tagline">AI-assisted animal disease detection · dog · cow · chicken</div>
+</header>
+<main>
+  <!-- Upload card -->
+  <div class="card">
+    <h2>Upload an Image</h2>
+    <div id="drop-zone">
+      <div id="upload-prompt">
+        <div class="upload-icon">🐾</div>
+        <div class="upload-label">
+          Drag & drop a photo here, or <strong id="browse-link">browse</strong>
+        </div>
+        <div class="upload-label" style="margin-top:6px;font-size:0.78rem">Supports JPG, PNG · Max 10 MB</div>
+      </div>
+      <div id="preview-wrap">
+        <img id="preview-img" src="" alt="Preview" />
+        <button id="change-btn">Change image</button>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png" />
+    </div>
+  </div>
+  <!-- Animal selector -->
+  <div class="card">
+    <h2>Select Animal <span style="font-weight:400;color:var(--muted);font-size:0.85rem">(auto-detected if left blank)</span></h2>
+    <div class="animal-grid">
+      <button class="animal-btn" data-animal="dog">
+        <span class="icon">🐕</span>Dog
+      </button>
+      <button class="animal-btn" data-animal="cow">
+        <span class="icon">🐄</span>Cow
+      </button>
+      <button class="animal-btn" data-animal="chicken">
+        <span class="icon">🐔</span>Chicken
+      </button>
+    </div>
+  </div>
+  <!-- Submit -->
+  <button id="submit-btn" disabled>Analyse Image</button>
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <div style="color:var(--muted);font-size:0.88rem">Analysing image…</div>
+  </div>
+  <!-- Error -->
+  <div id="error-box"></div>
+  <!-- Results -->
+  <div id="results">
+    <!-- Detected animal chip -->
+    <div id="detected-chip"></div>
+    <!-- Predictions -->
+    <div class="card">
+      <div class="section-title">Disease Predictions (Top 3)</div>
+      <div id="pred-bars"></div>
+    </div>
+    <!-- Grad-CAM -->
+    <div class="card" id="gradcam-card" style="display:none">
+      <div class="section-title">Grad-CAM — Areas the model focused on</div>
+      <div class="gradcam-wrap">
+        <div style="flex:1">
+          <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px">Heatmap overlay</div>
+          <img id="gradcam-overlay" src="" alt="Grad-CAM overlay" />
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:12px">
+        Red / warm areas indicate regions that most influenced the prediction.
+      </p>
+    </div>
+    <!-- Follow-up questions -->
+    <div class="card" id="questions-card">
+      <div class="section-title">Follow-up Questions</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px">
+        Answer these to refine the confidence score.
+      </p>
+      <div id="question-list"></div>
+      <button id="refine-btn" disabled>Refine Prediction</button>
+    </div>
+    <!-- Refined result -->
+    <div class="card" id="refined-result">
+      <div class="section-title">Refined Assessment</div>
+      <div class="refined-box">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-bottom:2px">Adjusted confidence</div>
+            <div id="refined-conf" class="refined-conf"></div>
+          </div>
+          <div id="refined-badge"></div>
+        </div>
+        <hr />
+        <div id="refined-advice" class="advice-text"></div>
+        <div id="score-breakdown" style="margin-top:10px;font-size:0.78rem;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div><!-- /results -->
+</main>
+<script>
+const API = "http://localhost:5000";
+// ── State ──────────────────────────────────────────────────────────────────
+let selectedFile   = null;
+let selectedAnimal = "";
+let topPrediction  = null;
+// ── DOM refs ──────────────────────────────────────────────────────────────
+const dropZone      = document.getElementById("drop-zone");
+const fileInput     = document.getElementById("file-input");
+const browseLink    = document.getElementById("browse-link");
+const uploadPrompt  = document.getElementById("upload-prompt");
+const previewWrap   = document.getElementById("preview-wrap");
+const previewImg    = document.getElementById("preview-img");
+const changeBtn     = document.getElementById("change-btn");
+const submitBtn     = document.getElementById("submit-btn");
+const loader        = document.getElementById("loader");
+const errorBox      = document.getElementById("error-box");
+const resultsDiv    = document.getElementById("results");
+const predBars      = document.getElementById("pred-bars");
+const gradcamCard   = document.getElementById("gradcam-card");
+const gradcamOverlay= document.getElementById("gradcam-overlay");
+const questionList  = document.getElementById("question-list");
+const refineBtn     = document.getElementById("refine-btn");
+const refinedResult = document.getElementById("refined-result");
+const refinedConf   = document.getElementById("refined-conf");
+const refinedBadge  = document.getElementById("refined-badge");
+const refinedAdvice = document.getElementById("refined-advice");
+const scoreBreak    = document.getElementById("score-breakdown");
+const detectedChip  = document.getElementById("detected-chip");
+// ── Upload / drag-drop ─────────────────────────────────────────────────────
+browseLink.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("click", e => {
+  if (e.target === dropZone || e.target === uploadPrompt || e.target.closest("
+    fileInput.click();
+});
+dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", ()=> dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) setFile(file);
+});
+fileInput.addEventListener("change", () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+changeBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  fileInput.click();
+});
+function setFile(file) {
+  selectedFile = file;
+  const url = URL.createObjectURL(file);
+  previewImg.src  = url;
+  uploadPrompt.style.display = "none";
+  previewWrap.style.display  = "block";
+  updateSubmitBtn();
+  hideResults();
+}
+// ── Animal selector ────────────────────────────────────────────────────────
+document.querySelectorAll(".animal-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (btn.classList.contains("selected")) {
+      btn.classList.remove("selected");
+      selectedAnimal = "";
+    } else {
+      document.querySelectorAll(".animal-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedAnimal = btn.dataset.animal;
+    }
+  });
+});
+function updateSubmitBtn() {
+  submitBtn.disabled = !selectedFile;
+}
+// ── Submit ─────────────────────────────────────────────────────────────────
+submitBtn.addEventListener("click", async () => {
+  if (!selectedFile) return;
+  showLoader(true);
+  hideResults();
+  hideError();
+  const fd = new FormData();
+  fd.append("image", selectedFile);
+  if (selectedAnimal) fd.append("animal", selectedAnimal);
+  try {
+    const res  = await fetch(`${API}/predict`, { method: "POST", body: fd });
+    const data = await res.json();
+    showLoader(false);
+    if (!res.ok) {
+      showError(data.message || "Prediction failed.");
+      return;
+    }
+    renderResults(data);
+  } catch (err) {
+    showLoader(false);
+    showError("Cannot reach the server. Make sure app.py is running on port 5000.");
+  }
+});
+// ── Render results ─────────────────────────────────────────────────────────
+function renderResults(data) {
+  resultsDiv.style.display = "block";
+  // Detected animal chip
+  const animalEmojis = { dog:"🐕", cow:"🐄", chicken:"🐔" };
+  detectedChip.innerHTML = `
+    <span class="detected-chip">
+      ${animalEmojis[data.detected_animal] || "🐾"}
+      Detected: <strong>${data.detected_animal}</strong>
+      &nbsp;·&nbsp; detector score: ${(data.detection_score * 100).toFixed(1)}%
+    </span>`;
+  // Top prediction stored for refine
+  topPrediction = data.predictions[0];
+  // Prediction bars
+  predBars.innerHTML = "";
+  data.predictions.forEach((p, i) => {
+    const cls = i === 0 ? "" : (i === 1 ? "mid" : "low");
+    predBars.innerHTML += `
+      <div class="pred-item">
+        <div class="pred-header">
+          <span class="pred-label">${p.disease.replace(/_/g," ")}</span>
+          <span class="pred-pct">${p.confidence.toFixed(1)}%</span>
+        </div>
+        <div class="bar-bg">
+          <div class="bar-fill ${cls}" style="width:${p.confidence}%"></div>
+        </div>
+      </div>`;
+  });
+  // Grad-CAM
+  if (data.gradcam_overlay) {
+    gradcamOverlay.src = "data:image/jpeg;base64," + data.gradcam_overlay;
+    gradcamCard.style.display = "block";
+  }
+  // Follow-up questions
+  questionList.innerHTML = "";
+  (data.followup_questions || []).forEach((q, idx) => {
+    questionList.innerHTML += `
+      <div class="question-item" id="qi-${idx}">
+        <span class="question-text">${q}</span>
+        <div class="yn-group">
+          <button class="yn-btn yes" data-q="${idx}" data-val="yes" onclick="toggleYN(this)">Yes</button>
+          <button class="yn-btn no"  data-q="${idx}" data-val="no"  onclick="toggleYN(this)">No</button>
+        </div>
+      </div>`;
+  });
+  refineBtn.disabled = false;
+  refinedResult.style.display = "none";
+  resultsDiv.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+// ── Follow-up answers ──────────────────────────────────────────────────────
+function toggleYN(btn) {
+  const q     = btn.dataset.q;
+  const group = btn.closest(".yn-group");
+  group.querySelectorAll(".yn-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  checkAllAnswered();
+}
+function checkAllAnswered() {
+  const items    = document.querySelectorAll(".question-item");
+  const answered = [...items].every(item => item.querySelector(".yn-btn.active"));
+  refineBtn.disabled = !answered;
+}
+// ── Refine ─────────────────────────────────────────────────────────────────
+refineBtn.addEventListener("click", async () => {
+  refineBtn.disabled = true;
+  refineBtn.textContent = "Refining…";
+  const answers = {};
+  document.querySelectorAll(".question-item").forEach(item => {
+    const q   = item.querySelector(".question-text").textContent;
+    const ans = item.querySelector(".yn-btn.active");
+    if (ans) answers[q] = ans.dataset.val;
+  });
+  try {
+    const res  = await fetch(`${API}/refine`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({
+        top_prediction: topPrediction,
+        symptoms:       [],
+        answers,
+      }),
+    });
+    const data = await res.json();
+    renderRefined(data);
+  } catch (err) {
+    showError("Refine request failed. Make sure app.py is running.");
+  } finally {
+    refineBtn.disabled   = false;
+    refineBtn.textContent = "Refine Prediction";
+  }
+});
+function renderRefined(data) {
+  refinedResult.style.display = "block";
+  refinedConf.textContent = `${data.confidence}%`;
+  refinedConf.className   = `refined-conf ${data.risk_level}`;
+  refinedBadge.innerHTML  = `<span class="risk-badge risk-${data.risk_level}">${data.risk_level} risk</span>`;
+  refinedAdvice.textContent = data.advice;
+  scoreBreak.textContent  = `Model score: ${data.raw_confidence}% → +${data.symptom_boost}% symptoms +${data.answer_boost}% answers = ${data.confidence}%`;
+  refinedResult.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+// ── Helpers ────────────────────────────────────────────────────────────────
+function showLoader(on) {
+  loader.style.display    = on ? "block"  : "none";
+  submitBtn.style.display = on ? "none"   : "block";
+}
+function showError(msg) {
+  errorBox.textContent    = msg;
+  errorBox.style.display  = "block";
+}
+function hideError()  { errorBox.style.display   = "none"; }
+function hideResults(){ resultsDiv.style.display  = "none"; }
+</script>
+</body>
+</html>

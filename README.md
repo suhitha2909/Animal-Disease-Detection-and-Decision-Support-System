@@ -14,7 +14,7 @@ EfficientNetB0 transfer learning + Grad-CAM + symptom-guided confidence refineme
 | `remove_duplicates.py` | Remove duplicate/corrupt images using perceptual hashing |
 | `split.py` | **MOVE** 15% to val and 15% to test (no leakage) |
 | `train.py` | Train one model per animal, print honest test-set metrics |
-| `evaluate.py` | Standalone evaluation — per-class report + confusion matrix |
+| `evaluate.py` | Standalone evaluation per-class report + confusion matrix |
 | `app.py` | Flask API backend |
 | `animal_detector.py` | ImageNet-based gating check (is this actually the right animal?) |
 | `gradcam.py` | Grad-CAM heatmap generation |
@@ -41,7 +41,7 @@ python remove_duplicates.py
 python sort_data.py
 python sort_chicken.py
 
-# 5. Split into train / val / test  (uses MOVE — no data leakage)
+# 5. Split into train / val / test  (uses MOVE , no data leakage)
 python split.py
 
 # 6. Train
@@ -72,7 +72,7 @@ physically removed from train.  There is zero overlap between splits.
 
 ### 🔴 Bug 2 — Leakage in `sort_data.py`
 **Old code** mapped `raw_dog/valid/` and `raw_dog/test/` to
-`dataset/train/dog/` — the dataset's original test split was being used
+`dataset/train/dog/`  the dataset's original test split was being used
 for training.
 
 **Fix:** `sort_data.py` now maps:

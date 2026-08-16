@@ -62,7 +62,7 @@ python app.py
 
 ## What was wrong before (and what was fixed)
 
-### 🔴 Bug 1 — Data leakage in `split.py`  (CRITICAL)
+### 🔴 Bug 1 : Data leakage in `split.py`  (CRITICAL)
 **Old code** used `shutil.copy2()`, so images were copied to val/test but
 the originals stayed in `dataset/train/`.  The model trained on the same
 images it was validated on → artificially perfect 0.97 / 0.99 accuracy.
@@ -70,7 +70,7 @@ images it was validated on → artificially perfect 0.97 / 0.99 accuracy.
 **Fix:** `split.py` now uses `shutil.move()`.  Val and test images are
 physically removed from train.  There is zero overlap between splits.
 
-### 🔴 Bug 2 — Leakage in `sort_data.py`
+### 🔴 Bug 2 : Leakage in `sort_data.py`
 **Old code** mapped `raw_dog/valid/` and `raw_dog/test/` to
 `dataset/train/dog/`  the dataset's original test split was being used
 for training.
@@ -79,7 +79,7 @@ for training.
 - `raw_dog/valid/ → dataset/val/dog/`
 - `raw_dog/test/  → dataset/test/dog/`
 
-### 🟡 Bug 3 — Too little regularisation in `train.py`
+### 🟡 Bug 3 : Too little regularisation in `train.py`
 Dropout was 0.3 / 0.2.  With a powerful ImageNet backbone and only
 ~150 images per class, this was not enough.
 
@@ -90,14 +90,14 @@ Dropout was 0.3 / 0.2.  With a powerful ImageNet backbone and only
   (full fine-tuning on small data = overfitting)
 - Class-balanced loss weights added (handles imbalanced datasets)
 
-### 🟡 Bug 4 — No honest evaluation
+### 🟡 Bug 4 : No honest evaluation
 Training only reported training/val accuracy, never test accuracy.
 
 **Fix:** `train.py` now evaluates on the held-out test set after training
 and prints a per-class `classification_report` + confusion matrix.
 A standalone `evaluate.py` is also provided.
 
-### 🟡 Bug 5 — `gradcam.py` returned a flat string
+### 🟡 Bug 5 : `gradcam.py` returned a flat string
 **Old:** `get_gradcam()` returned a single base64 string.
 **Fix:** returns `{"overlay": ..., "heatmap": ...}` so the frontend can
 show both the coloured overlay and, optionally, the raw activation map.
@@ -114,7 +114,7 @@ show both the coloured overlay and, optionally, the raw activation map.
 | Chicken| 80–88 % |
 
 These are honest numbers.  A val accuracy of 99 % on a 150-image-per-class
-dataset is always a sign of leakage — not a sign of a good model.
+dataset is always a sign of leakage, not a sign of a good model.
 
 ---
 
@@ -127,7 +127,7 @@ After the user answers follow-up questions, `decision_support.py`:
 1. Matches symptom keywords → +0–10 % boost
 2. Counts "yes" answers → +0–5 % boost
 3. Hard cap: symptoms cannot push a weak model prediction (< 45 %) above 55 %
-4. Total adjustment capped at ±15 % — symptoms never override the model
+4. Total adjustment capped at ±15 %  symptoms never override the model
 
 Risk bands:
 - **HIGH**   ≥ 75 % → consult vet immediately

@@ -1,4 +1,4 @@
-# VetScan — Animal Disease Detection System
+# VetScan : Animal Disease Detection System
 
 AI-assisted disease detection for dogs, cows, and chickens using
 EfficientNetB0 transfer learning + Grad-CAM + symptom-guided confidence refinement.
